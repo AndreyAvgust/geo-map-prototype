@@ -1,55 +1,81 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Geo Map Prototype</title>
-
-  <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: #000;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Интерактивная карта</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<style>
+  #map { height: 100vh; width: 100vw; }
+  .layer-toggle {
+    position: absolute; top: 10px; left: 10px; z-index: 1000; 
+    cursor: pointer; background: white; padding: 5px; border-radius: 4px;
+  }
+  .custom-label {
+    font-family: 'Google Sans', sans-serif; 
+    color: rgb(26,26,26); cursor: pointer;
+    white-space: nowrap;
+  }
+</style>
 </head>
 <body>
 
 <div id="map"></div>
+<div class="layer-toggle">Слои</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+<script src="https://unpkg.com/leaflet.gridlayer.googlemutant/Leaflet.GoogleMutant.js"></script>
 <script>
-  // 1. Границы изображения (по твоим координатам)
-  const imageBounds = [
+
+// 1. Создаём карту
+var map = L.map('map', { zoomControl: true });
+
+// 2. Картинка из репозитория
+var imageBounds = [
     [55.446292, 27.636646], // левый нижний
     [55.636534, 28.055168]  // правый верхний
-  ];
+];
+var imageLayer = L.imageOverlay('MAP_V2_2.jpeg', imageBounds).addTo(map);
+map.fitBounds(imageBounds);
 
-  // 2. Инициализация карты
-  const map = L.map('map', {
-    zoomControl: true,
-    attributionControl: false
-  });
+// 3. Текстовые метки
+var labels = [
+    {
+        text: 'Воз. Ельня',
+        coords: [55.555622, 27.873533],
+        description: 'Описание озера...'
+    }
+];
 
-  // 3. Основной слой — картинка
-  const imageLayer = L.imageOverlay(
-    'assets/map-base.jpg',
-    imageBounds
-  ).addTo(map);
+labels.forEach(function(lbl) {
+    var marker = L.marker(lbl.coords, {
+        icon: L.divIcon({
+            className: 'custom-label',
+            html: lbl.text,
+            iconAnchor: [0, 0]
+        })
+    }).addTo(map);
 
-  // 4. Камера — показываем всю картинку
-  map.fitBounds(imageBounds);
+    marker.on('click', function() {
+        L.popup()
+            .setLatLng(lbl.coords)
+            .setContent('<b>' + lbl.text + '</b><br>' + lbl.description)
+            .openOn(map);
+    });
+});
+
+// 4. Google Maps слой
+var googleLayer = L.gridLayer.googleMutant({ type: 'satellite' });
+var showGoogle = false;
+document.querySelector('.layer-toggle').onclick = function() {
+    if (!showGoogle) {
+        map.addLayer(googleLayer);
+        showGoogle = true;
+    } else {
+        map.removeLayer(googleLayer);
+        showGoogle = false;
+    }
+};
 
 </script>
 </body>
